@@ -1,8 +1,8 @@
 %undefine _missing_build_ids_terminate_build
 
 Name:		edcop-cni
-Version:	1
-Release:	0
+Version:	2.1
+Release:	1
 Summary:	EDCOP CNI Plugins
 
 Group:		application
@@ -24,9 +24,9 @@ CNI Plugins required to utilize multiple networks within the EDCOP containers
 
 %install
 install -m 0755 -d  %{buildroot}/opt/cni/bin/
-install fixipam $RPM_BUILD_ROOT/opt/cni/bin/fixipam
+#install fixipam $RPM_BUILD_ROOT/opt/cni/bin/fixipam
 install multus $RPM_BUILD_ROOT/opt/cni/bin/multus
-install ovs $RPM_BUILD_ROOT/opt/cni/bin/ovs
+#install ovs $RPM_BUILD_ROOT/opt/cni/bin/ovs
 install sriov $RPM_BUILD_ROOT/opt/cni/bin/sriov
 
 %clean

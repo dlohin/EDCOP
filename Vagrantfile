@@ -6,34 +6,31 @@ RELEASE=1
 #############Initial Setup of Build environment#################
 sudo yum -y install  epel-release
 
-sudo yum -y install golang glide rpm-build git gcc kernel-headers wget
+sudo yum -y install golang glide rpm-build git gcc kernel-headers wget install xmlto krb5-server pcp-libs-devel systemd-devel glib2-devel glib-networking docbook-style-xsl libxslt-devel krb5-devel zlib-devel openssl-devel libssh-devel intltool automake autoconf pam-devel pkgconfig json-glib json-glib-devel polkit-devel
 
 
-mkdir -p /home/vagrant/rpmbuild/SOURCES
-
-git clone https://github.com/sealingtech/EDCOP
-
+mkdir -p ~/rpmbuild/SOURCES
 
 
 ##########Build out of CNI packages###########################
 
-cd /home/vagrant/EDCOP/ext-packages/edcop-cni/
+cd /tmp
 
-wget https://github.com/intel/multus-cni/archive/v3.2.tar.gz -O multus-cni.tgz; tar xvzf multus-cni.tgz; cd ./multus-cni-*; ./build
+git clone https://github.com/intel/multus-cni/; cd ./multus-cni; git checkout -b tags/v3.2; ./build
 
-cd /home/vagrant/EDCOP/ext-packages/edcop-cni/
+cd /tmp
 
 wget https://github.com/intel/sriov-cni/archive/v1.0.0.tar.gz -O sriov-cni.tgz; tar xvzf sriov-cni.tgz; cd ./sriov-cni-*; make
 
-cd /home/vagrant/EDCOP/ext-packages/edcop-cni/
+cd /tmp
 
 wget https://github.com/containernetworking/plugins/archive/v0.7.5.tar.gz -O plugins.tgz; tar xvzf plugins.tgz;  cd ./plugins-*; ./build.sh
 
-cd /home/vagrant/EDCOP/ext-packages/edcop-cni/
+cd /tmp
 
 mkdir edcop-cni-$VERSION
 
-cp multus-cni-*/bin/multus edcop-cni-$VERSION
+cp multus-cni/bin/multus edcop-cni-$VERSION
 
 cp plugins-*/bin/* edcop-cni-$VERSION
 
@@ -41,9 +38,17 @@ cp sriov-cni-*/build/* edcop-cni-$VERSION
 
 tar cvzf edcop-cni-$VERSION.tar.gz edcop-cni-$VERSION
 
-cp edcop-cni-$VERSION.tar.gz /home/vagrant/rpmbuild/SOURCES/edcop-cni.tar.gz
+cp edcop-cni-$VERSION.tar.gz /root/rpmbuild/SOURCES/edcop-cni.tar.gz
 
-rpmbuild -bb edcop-cni.spec
+
+rpmbuild -bb /vagrant/ext-packages/edcop-cni/edcop-cni.spec
+
+
+########Build Cockpit###############
+wget https://github.com/cockpit-project/cockpit/releases/download/190/cockpit-190.tar.xz -O /root/rpmbuild/SOURCES/cockpit-190.tar.xz
+
+
+
 SCRIPT
 
 Vagrant.configure("2") do |config|
@@ -51,7 +56,9 @@ Vagrant.configure("2") do |config|
   config.vm.network "private_network", ip: "192.168.1.4"
   config.vm.define "EDCOP_KS_DEV"
   config.disksize.size='50GB'
+  #config.vm.provision "file", source: "ext-packages/", destination: "/vagrant"
   config.vm.provision "shell", inline: $script
+  
   
   config.vm.provider "virtualbox" do |v|
     v.name = "EDCOP_KS_DEV"
