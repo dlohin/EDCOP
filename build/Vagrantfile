@@ -1,0 +1,64 @@
+$script = <<SCRIPT
+VERSION='2.1'
+RELEASE=1
+
+
+#############Initial Setup of Build environment#################
+sudo yum -y install  epel-release
+
+sudo yum -y install golang glide rpm-build git gcc kernel-headers wget
+
+
+mkdir -p /home/vagrant/rpmbuild/SOURCES
+
+git clone https://github.com/sealingtech/EDCOP
+
+
+
+##########Build out of CNI packages###########################
+
+cd /home/vagrant/EDCOP/ext-packages/edcop-cni/
+
+wget https://github.com/intel/multus-cni/archive/v3.2.tar.gz -O multus-cni.tgz; tar xvzf multus-cni.tgz; cd ./multus-cni-*; ./build
+
+cd /home/vagrant/EDCOP/ext-packages/edcop-cni/
+
+wget https://github.com/intel/sriov-cni/archive/v1.0.0.tar.gz -O sriov-cni.tgz; tar xvzf sriov-cni.tgz; cd ./sriov-cni-*; make
+
+cd /home/vagrant/EDCOP/ext-packages/edcop-cni/
+
+wget https://github.com/containernetworking/plugins/archive/v0.7.5.tar.gz -O plugins.tgz; tar xvzf plugins.tgz;  cd ./plugins-*; ./build.sh
+
+cd /home/vagrant/EDCOP/ext-packages/edcop-cni/
+
+mkdir edcop-cni-$VERSION
+
+cp multus-cni-*/bin/multus edcop-cni-$VERSION
+
+cp plugins-*/bin/* edcop-cni-$VERSION
+
+cp sriov-cni-*/build/* edcop-cni-$VERSION
+
+tar cvzf edcop-cni-$VERSION.tar.gz edcop-cni-$VERSION
+
+cp edcop-cni-$VERSION.tar.gz /home/vagrant/rpmbuild/SOURCES/edcop-cni.tar.gz
+
+rpmbuild -bb edcop-cni.spec
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "centos/7"
+  config.vm.network "private_network", ip: "192.168.1.4"
+  config.vm.define "EDCOP_KS_DEV"
+  config.disksize.size='50GB'
+  config.vm.provision "shell", inline: $script
+  
+  config.vm.provider "virtualbox" do |v|
+    v.name = "EDCOP_KS_DEV"
+    v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    v.customize ["modifyvm", :id, "--name", "EDCOP_KS_DEV"]
+    v.customize ["modifyvm", :id, "--memory", 8192]
+    v.customize ["modifyvm", :id, "--cpus", 4]
+  end  
+end
+
